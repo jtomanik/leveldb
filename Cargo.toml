@@ -13,21 +13,20 @@ documentation = "http://skade.github.io/leveldb/"
 homepage = "https://github.com/skade/leveldb"
 repository = "https://github.com/skade/leveldb"
 
-[lib]
+edition = "2018"
 
+[lib]
 name = "leveldb"
 
 [dependencies]
-
 db-key = "0.0.5"
 libc = "0.2.4"
-
-[dependencies.leveldb-sys]
-version = "2.0.0"
-features = ["snappy"]
+leveldb-sys = { path = "./leveldb-sys" }
 
 [dev-dependencies]
-tempdir = "0.3.4"
+tempfile = "3.0.5"
 
-[[test]]
-name = "tests"
+[workspace]
+members = [
+  "leveldb-sys",
+]

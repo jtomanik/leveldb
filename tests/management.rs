@@ -1,6 +1,11 @@
+extern crate db_key as key;
+extern crate leveldb;
+
+mod utils;
+
+use crate::utils::{open_database, tmpdir};
 use leveldb::management::*;
 use leveldb::options::*;
-use utils::{open_database,tmpdir};
 
 #[test]
 fn test_destroy_database() {

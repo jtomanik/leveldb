@@ -2,14 +2,14 @@
 
 use super::Database;
 
-use options::{WriteOptions, ReadOptions, c_writeoptions, c_readoptions};
-use super::error::Error;
-use database::key::Key;
-use std::ptr;
-use std::borrow::Borrow;
-use libc::{c_char, size_t};
-use leveldb_sys::*;
 use super::bytes::Bytes;
+use super::error::Error;
+use crate::database::key::Key;
+use crate::options::{c_readoptions, c_writeoptions, ReadOptions, WriteOptions};
+use leveldb_sys::*;
+use libc::{c_char, size_t};
+use std::borrow::Borrow;
+use std::ptr;
 
 /// Key-Value-Access to the leveldb database, providing
 /// a basic interface.
@@ -58,19 +58,21 @@ impl<K: Key> KV<K> for Database<K> {
             key.borrow().as_slice(|k| {
                 let mut error = ptr::null_mut();
                 let c_writeoptions = c_writeoptions(options);
-                leveldb_put(self.database.ptr,
-                            c_writeoptions,
-                            k.as_ptr() as *mut c_char,
-                            k.len() as size_t,
-                            value.as_ptr() as *mut c_char,
-                            value.len() as size_t,
-                            &mut error);
+                leveldb_put(
+                    self.database.ptr,
+                    c_writeoptions,
+                    k.as_ptr() as *mut c_char,
+                    k.len() as size_t,
+                    value.as_ptr() as *mut c_char,
+                    value.len() as size_t,
+                    &mut error,
+                );
                 leveldb_writeoptions_destroy(c_writeoptions);
 
                 if error == ptr::null_mut() {
                     Ok(())
                 } else {
-                    Err(Error::new_from_i8(error))
+                    Err(Error::new_from_c_char(error))
                 }
             })
         }
@@ -87,16 +89,12 @@ impl<K: Key> KV<K> for Database<K> {
             key.borrow().as_slice(|k| {
                 let mut error = ptr::null_mut();
                 let c_writeoptions = c_writeoptions(options);
-                leveldb_delete(self.database.ptr,
-                               c_writeoptions,
-                               k.as_ptr() as *mut c_char,
-                               k.len() as size_t,
-                               &mut error);
+                leveldb_delete(self.database.ptr, c_writeoptions, k.as_ptr() as *mut c_char, k.len() as size_t, &mut error);
                 leveldb_writeoptions_destroy(c_writeoptions);
                 if error == ptr::null_mut() {
                     Ok(())
                 } else {
-                    Err(Error::new_from_i8(error))
+                    Err(Error::new_from_c_char(error))
                 }
             })
         }
@@ -108,18 +106,13 @@ impl<K: Key> KV<K> for Database<K> {
                 let mut error = ptr::null_mut();
                 let mut length: size_t = 0;
                 let c_readoptions = c_readoptions(&options);
-                let result = leveldb_get(self.database.ptr,
-                                         c_readoptions,
-                                         k.as_ptr() as *mut c_char,
-                                         k.len() as size_t,
-                                         &mut length,
-                                         &mut error);
+                let result = leveldb_get(self.database.ptr, c_readoptions, k.as_ptr() as *mut c_char, k.len() as size_t, &mut length, &mut error);
                 leveldb_readoptions_destroy(c_readoptions);
 
                 if error == ptr::null_mut() {
                     Ok(Bytes::from_raw(result as *mut u8, length))
                 } else {
-                    Err(Error::new_from_i8(error))
+                    Err(Error::new_from_c_char(error))
                 }
             })
         }

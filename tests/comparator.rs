@@ -1,33 +1,36 @@
-#[cfg(test)]
-mod comparator {
-  use libc::c_char;
-  use key::Key;
-  use utils::{tmpdir, db_put_simple};
-  use leveldb::database::{Database};
-  use leveldb::iterator::Iterable;
-  use leveldb::options::{Options,ReadOptions};
-  use leveldb::comparator::{Comparator,OrdComparator};
-  use std::cmp::Ordering;
-  use std::marker::PhantomData;
-  
-  struct ReverseComparator<K> {
-      marker: PhantomData<K>
-  }
+extern crate db_key as key;
+extern crate leveldb;
 
-  impl<K: Key + Ord> Comparator for ReverseComparator<K> {
+mod utils;
+
+use crate::utils::{db_put_simple, tmpdir};
+use db_key::Key;
+use leveldb::comparator::{Comparator, OrdComparator};
+use leveldb::database::Database;
+use leveldb::iterator::Iterable;
+use leveldb::options::{Options, ReadOptions};
+use libc::c_char;
+use std::cmp::Ordering;
+use std::marker::PhantomData;
+
+struct ReverseComparator<K> {
+    marker: PhantomData<K>,
+}
+
+impl<K: Key + Ord> Comparator for ReverseComparator<K> {
     type K = K;
 
     fn name(&self) -> *const c_char {
-      "reverse".as_ptr() as *const c_char
+        "reverse".as_ptr() as *const c_char
     }
-  
-    fn compare(&self, a: &K, b: &K) -> Ordering {
-      b.cmp(a)
-    }
-  }
 
-  #[test]
-  fn test_comparator() {
+    fn compare(&self, a: &K, b: &K) -> Ordering {
+        b.cmp(a)
+    }
+}
+
+#[test]
+fn test_comparator() {
     let comparator: ReverseComparator<i32> = ReverseComparator { marker: PhantomData };
     let mut opts = Options::new();
     opts.create_if_missing = true;
@@ -41,10 +44,10 @@ mod comparator {
 
     assert_eq!((2, vec![2]), iter.next().unwrap());
     assert_eq!((1, vec![1]), iter.next().unwrap());
-  }
+}
 
-  #[test]
-  fn test_ord_comparator() {
+#[test]
+fn test_ord_comparator() {
     let comparator: OrdComparator<i32> = OrdComparator::new("foo");
     let mut opts = Options::new();
     opts.create_if_missing = true;
@@ -58,5 +61,4 @@ mod comparator {
 
     assert_eq!((1, vec![1]), iter.next().unwrap());
     assert_eq!((2, vec![2]), iter.next().unwrap());
-  }
 }

@@ -1,7 +1,7 @@
 //! The module defining custom leveldb error type.
 
-use libc::c_void;
 use leveldb_sys::leveldb_free;
+use libc::c_void;
 use std;
 
 /// A leveldb error, just containing the error string
@@ -21,9 +21,9 @@ impl Error {
     ///
     /// This method is `unsafe` because the pointer must be valid and point to heap.
     /// The pointer will be passed to `free`!
-    pub unsafe fn new_from_i8(message: *const i8) -> Error {
-        use std::str::from_utf8;
+    pub unsafe fn new_from_c_char(message: *const libc::c_char) -> Error {
         use std::ffi::CStr;
+        use std::str::from_utf8;
 
         let err_string = from_utf8(CStr::from_ptr(message).to_bytes()).unwrap().to_string();
         leveldb_free(message as *mut c_void);
@@ -32,7 +32,7 @@ impl Error {
 }
 
 impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "LevelDB error: {}", self.message)
     }
 }
@@ -41,7 +41,7 @@ impl std::error::Error for Error {
     fn description(&self) -> &str {
         &self.message
     }
-    fn cause(&self) -> Option<&std::error::Error> {
+    fn cause(&self) -> Option<&dyn std::error::Error> {
         None
     }
 }
